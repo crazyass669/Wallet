@@ -1,4 +1,4 @@
-const CACHE = 'pixel-wallet-v1';
+const CACHE = 'pixel-wallet-v3'; // ต้องเปลี่ยนเลขทุกครั้งที่แก้ไฟล์ในแอป ไม่งั้นเครื่องที่ติดตั้งแล้วจะไม่เห็นเวอร์ชันใหม่ (cache-first)
 const ASSETS = ['./pixel-wallet.html', './manifest.json', './icon.svg'];
 
 self.addEventListener('install', e => {

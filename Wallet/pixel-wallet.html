@@ -209,6 +209,22 @@
   .edit-tab-btn { padding: 9px 6px; border: 2px solid var(--border); border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 700; font-family: 'Noto Sans Thai', sans-serif; background: var(--bg-card); color: var(--text-dim); }
   .edit-tab-btn.active-expense { background: linear-gradient(180deg,#7f1d1d,#991b1b); border-color: #dc2626; color: #fca5a5; }
   .edit-tab-btn.active-income { background: linear-gradient(180deg,#1e3a5f,#1e40af); border-color: #3b82f6; color: #93c5fd; }
+
+  /* NOTICES */
+  .notice-box { display: none; padding: 10px 14px 0; }
+  .notice { background: #2a2410; border: 2px solid var(--gold-dark); border-radius: var(--btn-radius); padding: 8px 10px; font-size: 12px; color: #fde68a; margin-bottom: 6px; }
+  .notice.warn { background: #3b1515; border-color: #7f1d1d; color: #fca5a5; cursor: pointer; }
+  .notice-btns { display: flex; gap: 6px; margin-top: 6px; }
+  .notice-btns button { flex: 1; padding: 6px; border-radius: 4px; border: 2px solid var(--border); background: var(--bg-card); color: var(--text-main); font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+  .notice-btns button.primary { background: var(--blue-dark); border-color: var(--blue); color: #fff; }
+  .install-due { font-size: 11px; color: var(--text-dim); margin-bottom: 8px; }
+  .install-due.soon { color: #fbbf24; font-weight: 700; }
+  .install-due.over { color: #f87171; font-weight: 700; }
+  .cat-chip { background: var(--bg-card2); border: 1px solid var(--border); border-radius: 4px; padding: 6px 8px 6px 10px; font-size: 13px; display: flex; align-items: center; gap: 6px; }
+  .cat-chip .cat-type { font-size: 10px; padding: 2px 6px; border-radius: 10px; border: 1px solid var(--border); color: var(--text-dim); cursor: pointer; }
+  .cat-chip .cat-type.expense { color: #fca5a5; border-color: #7f1d1d; }
+  .cat-chip .cat-type.income { color: #93c5fd; border-color: #3b82f6; }
+  .cat-chip .cat-del { color: var(--red); font-size: 12px; padding: 2px 6px; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -238,6 +254,7 @@
 
   <!-- PAGE: บันทึก -->
   <div class="page active" id="page-record">
+    <div class="notice-box" id="noticeBox"></div>
     <div class="tab-toggle">
       <button class="tab-btn expense active" id="tabExpense" onclick="setTab('expense')">💸 รายจ่าย</button>
       <button class="tab-btn income" id="tabIncome" onclick="setTab('income')">💰 รายรับ</button>
@@ -323,6 +340,7 @@
       <div class="sum-card">
         <div class="sum-label">💎 ยอดคงเหลือปัจจุบัน</div>
         <div class="sum-value neutral" id="baseBalance" style="font-size:18px;">฿0</div>
+        <div style="font-size:10px;color:var(--text-dim);" id="baseNote"></div>
       </div>
     </div>
     <div class="chart-section">
@@ -343,6 +361,13 @@
           <button onclick="exportJSON()" style="padding:11px 6px;background:linear-gradient(180deg,#1e3a5f,#1e40af);border:2px solid #3b82f6;border-radius:4px;color:#93c5fd;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 3px 0 #1e3a5f;">💾 Export JSON</button>
         </div>
         <div style="font-size:11px;color:var(--text-dim);margin-top:8px;">CSV สำหรับ Excel • JSON สำรองข้อมูลทั้งหมด</div>
+        <div style="font-size:11px;color:var(--gold);margin-top:6px;" id="backupInfo"></div>
+      </div>
+
+      <div style="background:var(--bg-card);border:2px solid var(--border);border-radius:4px;padding:14px;margin-bottom:10px;">
+        <div style="font-family:'Press Start 2P',monospace;font-size:9px;color:var(--gold);margin-bottom:4px;">🏦 ยอดตั้งต้น</div>
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:10px;">เงินที่มีอยู่ก่อนเริ่มใช้แอป — จะนำไปรวมใน "ยอดคงเหลือปัจจุบัน" ที่หน้าฐานะ (ติดลบได้ถ้ามีหนี้)</div>
+        <input type="number" id="openingInput" step="0.01" placeholder="0" oninput="saveOpening(this)" style="width:100%;background:var(--bg-card2);border:2px solid var(--border);border-radius:4px;padding:8px 10px;color:var(--text-main);font-size:14px;text-align:right;outline:none;font-family:inherit;">
       </div>
 
       <div style="background:var(--bg-card);border:2px solid var(--border);border-radius:4px;padding:14px;margin-bottom:10px;">
@@ -356,7 +381,7 @@
 
       <div style="background:var(--bg-card);border:2px solid var(--border);border-radius:4px;padding:14px;margin-bottom:10px;">
         <div style="font-family:'Press Start 2P',monospace;font-size:9px;color:var(--gold);margin-bottom:12px;">🗂 หมวดหมู่</div>
-        <div style="font-size:12px;color:var(--text-dim);margin-bottom:10px;">คลิก "+ เพิ่มใหม่" ในหน้าบันทึกเพื่อเพิ่มหมวด</div>
+        <div style="font-size:12px;color:var(--text-dim);margin-bottom:10px;">คลิก "+ เพิ่มใหม่" ในหน้าบันทึกเพื่อเพิ่มหมวด • แตะป้าย จ่าย/รับ/ทั้งคู่ เพื่อเปลี่ยนว่าหมวดไปอยู่แท็บไหน • แตะ ✕ เพื่อลบ</div>
         <div id="catManage" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
       </div>
 
@@ -419,6 +444,11 @@
     <div class="modal-title">➕ เพิ่มหมวดหมู่</div>
     <input type="text" class="modal-input" id="newCatEmoji" placeholder="Emoji เช่น 🎓" maxlength="4">
     <input type="text" class="modal-input" id="newCatName" placeholder="ชื่อหมวด เช่น การศึกษา">
+    <select class="modal-input" id="newCatType">
+      <option value="expense">💸 หมวดรายจ่าย</option>
+      <option value="income">💰 หมวดรายรับ</option>
+      <option value="both">↔ ใช้ได้ทั้งสองฝั่ง</option>
+    </select>
     <div class="modal-btns">
       <button class="modal-btn cancel" onclick="closeAddCatModal()">ยกเลิก</button>
       <button class="modal-btn ok" onclick="saveNewCat()">เพิ่ม</button>
@@ -451,6 +481,7 @@
     <input type="text" class="modal-input" id="installName" placeholder="ชื่อสินค้า เช่น iPhone 15 Pro">
     <input type="number" class="modal-input" id="installTotal" placeholder="ยอดรวมทั้งหมด (บาท)" min="1" step="0.01" oninput="updateInstallPreview()">
     <input type="number" class="modal-input" id="installCount" placeholder="จำนวนงวด" min="1" max="360" oninput="updateInstallPreview()">
+    <div style="font-size:11px;color:var(--text-dim);margin:0 0 4px;">วันครบกำหนดงวดแรก (ผ่อนรายเดือน — งวดถัดไปครบกำหนดวันเดียวกันของเดือนถัดไป)</div>
     <input type="date" class="modal-input" id="installStart">
     <select class="modal-input" id="installCat"></select>
     <input type="text" class="modal-input" id="installNote" placeholder="โน้ต (ไม่บังคับ)">
@@ -466,9 +497,7 @@
 
 <script>
 // ===== STATE =====
-let state = JSON.parse(localStorage.getItem('pixelWallet') || '{}');
-if (!state.transactions) state.transactions = [];
-if (!state.categories) state.categories = [
+const DEFAULT_CATEGORIES = [
   {id:'food',icon:'🍜',label:'อาหาร'},{id:'travel',icon:'🚌',label:'เดินทาง'},
   {id:'shopping',icon:'🛍️',label:'ช้อปปิ้ง'},{id:'bill',icon:'💡',label:'บิล/น้ำไฟ'},
   {id:'entertain',icon:'🎮',label:'บันเทิง'},{id:'health',icon:'💊',label:'สุขภาพ'},
@@ -477,10 +506,42 @@ if (!state.categories) state.categories = [
   {id:'insurance',icon:'🛡️',label:'ประกัน'},{id:'invest',icon:'💵',label:'ลงทุน'},
   {id:'diary',icon:'🎬',label:'ความบันเทิง'},
 ];
-if (!state.xp) state.xp = 0;
-if (!state.goal) state.goal = 10;
-if (!state.budgets) state.budgets = {};
-if (!state.installments) state.installments = [];
+// หมวดตั้งต้นเดิมเป็นหมวดรายจ่าย (ลงทุนใช้ได้ทั้งสองฝั่ง) / หมวดที่ผู้ใช้สร้างเองไม่มี type = ใช้ได้ทั้งสองฝั่ง
+const LEGACY_CAT_TYPES = {food:'expense',travel:'expense',shopping:'expense',bill:'expense',entertain:'expense',health:'expense',misc:'expense',api:'expense',fuel:'expense',home:'expense',insurance:'expense',invest:'both',diary:'expense'};
+const INCOME_CATEGORIES = [
+  {id:'inc_salary',icon:'💼',label:'เงินเดือน',type:'income'},
+  {id:'inc_bonus',icon:'🎁',label:'โบนัส/เงินพิเศษ',type:'income'},
+  {id:'inc_side',icon:'🧾',label:'รายได้เสริม',type:'income'},
+  {id:'inc_dividend',icon:'📈',label:'ดอกเบี้ย/ปันผล',type:'income'},
+  {id:'inc_refund',icon:'🔄',label:'เงินคืน/อื่นๆ',type:'income'},
+];
+const CAT_TYPES = ['expense','income','both'];
+
+let state = JSON.parse(localStorage.getItem('pixelWallet') || '{}');
+
+// เติมค่าที่ขาด/ย้ายข้อมูลเก่า — รันซ้ำได้ไม่เปลี่ยนผล (ใช้ตอนโหลดและหลังนำเข้า JSON)
+function migrateState() {
+  if (!Array.isArray(state.transactions)) state.transactions = [];
+  if (!Array.isArray(state.categories) || !state.categories.length) state.categories = DEFAULT_CATEGORIES.map(c=>({...c}));
+  if (!state.xp) state.xp = 0;
+  if (!state.goal) state.goal = 10;
+  if (!state.budgets) state.budgets = {};
+  if (!Array.isArray(state.installments)) state.installments = [];
+  if (typeof state.openingBalance !== 'number' || !isFinite(state.openingBalance)) state.openingBalance = 0;
+  if (typeof state.lastBackup !== 'number' || !isFinite(state.lastBackup)) delete state.lastBackup;
+  if (typeof state.backupSnoozeUntil !== 'number' || !isFinite(state.backupSnoozeUntil)) delete state.backupSnoozeUntil;
+  state.categories.forEach(c => { if (c.type && !CAT_TYPES.includes(c.type)) delete c.type; });
+  if (!state.catVersion) {
+    state.categories.forEach(c => { if (!c.type && LEGACY_CAT_TYPES[c.id]) c.type = LEGACY_CAT_TYPES[c.id]; });
+    INCOME_CATEGORIES.forEach(ic => { if (!state.categories.some(c=>c.id===ic.id)) state.categories.push({...ic}); });
+    state.catVersion = 2;
+  }
+}
+{
+  const needsSave = !state.catVersion;
+  migrateState();
+  if (needsSave) { try { localStorage.setItem('pixelWallet', JSON.stringify(state)); } catch(e) {} }
+}
 
 let currentTab = 'expense';
 let currentAmount = '';
@@ -500,6 +561,8 @@ function save() { localStorage.setItem('pixelWallet', JSON.stringify(state)); }
 function escapeHTML(str) {
   return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
+
+function r2(v) { return Math.round(v * 100) / 100; }
 
 function fmtAmt(v) {
   const n = Math.round(v * 100) / 100;
@@ -530,6 +593,8 @@ function populateMonthPicker(id, currentVal) {
     if (m === currentVal) opt.selected = true;
     sel.appendChild(opt);
   });
+  // เดือนที่เลือกไว้อาจไม่มีข้อมูลแล้ว (ลบ/แก้วันที่/นำเข้า) → กลับไป "ทุกเดือน" ไม่ให้ตัวกรองค้างแบบมองไม่เห็น
+  return months.includes(currentVal) ? currentVal : '';
 }
 
 function showToast(msg) {
@@ -539,9 +604,18 @@ function showToast(msg) {
 }
 
 // ===== INIT =====
+let lastToday = '';
+// แอป PWA ค้างข้ามคืนได้ → ขึ้นวันใหม่แล้วเลื่อนวันที่ตั้งต้นตาม แต่ไม่ทับวันที่ที่ผู้ใช้เลือกย้อนหลังเอง
+function refreshDefaultDate() {
+  const today = todayStr(), el = document.getElementById('txDate');
+  if (today === lastToday) return;
+  if (!el.value || el.value === lastToday) el.value = today;
+  lastToday = today;
+}
+
 function init() {
-  document.getElementById('txDate').value = todayStr();
-  renderCategories(); updateXP(); updateAmountDisplay();
+  refreshDefaultDate();
+  renderCategories(); updateXP(); updateAmountDisplay(); renderNotices();
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
 }
 
@@ -554,13 +628,22 @@ function setTab(tab) {
 }
 
 // ===== CATEGORIES =====
+// หมวดที่แสดงในแต่ละแท็บ: ไม่มี type หรือ 'both' = แสดงทั้งสองฝั่ง; แท็บรายรับเอาหมวดรายรับขึ้นก่อน
+function catsForTab(tab) {
+  const list = state.categories.filter(c => !c.type || c.type==='both' || c.type===tab);
+  return tab==='income' ? list.slice().sort((a,b) => (a.type==='income'?0:1) - (b.type==='income'?0:1)) : list;
+}
+
 function renderCategories() {
   const grid = document.getElementById('catGrid');
   grid.innerHTML = '';
-  state.categories.forEach(cat => {
+  const list = catsForTab(currentTab);
+  // หมวดที่เลือกไว้อาจไม่อยู่ในแท็บนี้แล้ว (สลับแท็บ/ลบหมวด/นำเข้า) → ล้างทิ้ง ไม่ให้บันทึกด้วยหมวดที่มองไม่เห็น
+  if (selectedCat && !list.some(c => c.id===selectedCat)) selectedCat = null;
+  list.forEach(cat => {
     const btn = document.createElement('div');
     btn.className = 'cat-btn' + (selectedCat===cat.id?' selected':'');
-    btn.innerHTML = `<span class="cat-icon">${cat.icon}</span><span class="cat-label">${escapeHTML(cat.label)}</span>`;
+    btn.innerHTML = `<span class="cat-icon">${escapeHTML(cat.icon)}</span><span class="cat-label">${escapeHTML(cat.label)}</span>`;
     btn.onclick = () => { selectedCat = cat.id; renderCategories(); };
     grid.appendChild(btn);
   });
@@ -605,6 +688,7 @@ function confirmEntry() {
   const date = document.getElementById('txDate').value;
   if (!date) { showToast('⚠ กรุณาเลือกวันที่'); return; }
   const cat = state.categories.find(c => c.id === selectedCat);
+  if (!cat) { selectedCat = null; renderCategories(); showToast('⚠ กรุณาเลือกหมวดหมู่'); return; }
   const tx = {
     id: Date.now(), type: currentTab, amount: Math.round(amt*100)/100,
     catId: selectedCat, catIcon: cat.icon, catLabel: cat.label,
@@ -618,7 +702,7 @@ function confirmEntry() {
   save(); checkLevelUp(oldXP, state.xp); updateXP();
   showToast('✓ บันทึกแล้ว!');
   currentAmount = ''; document.getElementById('txNote').value = ''; selectedCat = null;
-  updateAmountDisplay(); renderCategories();
+  updateAmountDisplay(); renderCategories(); renderNotices();
 }
 
 // ===== XP / LEVEL UP =====
@@ -646,6 +730,7 @@ function closeLevelUp() { document.getElementById('levelupOverlay').classList.re
 // ===== PAGES =====
 function showPage(name) {
   closeSwipe();
+  if (name==='record') { refreshDefaultDate(); renderNotices(); }
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-'+name).classList.add('active');
@@ -655,7 +740,7 @@ function showPage(name) {
   if (name==='summary') renderSummary();
   if (name==='base') renderBase();
   if (name==='install') renderInstall();
-  if (name==='settings') { renderCatManage(); renderBudgetManage(); updateXP(); }
+  if (name==='settings') { renderCatManage(); renderBudgetManage(); renderOpening(); renderBackupInfo(); updateXP(); }
 }
 
 // ===== HISTORY =====
@@ -668,7 +753,7 @@ function onHistoryMonthChange() { historyMonth = document.getElementById('histor
 function onHistorySearch() { historySearch = document.getElementById('historySearchInput').value.trim().toLowerCase(); renderHistory(); }
 
 function renderHistory() {
-  populateMonthPicker('historyMonthPicker', historyMonth);
+  historyMonth = populateMonthPicker('historyMonthPicker', historyMonth);
   const list = document.getElementById('txList');
   let txs = state.transactions;
   if (historyMonth) txs = txs.filter(t => t.date.startsWith(historyMonth));
@@ -738,10 +823,20 @@ function attachSwipe(wrap, item, onTap, delBg) {
 
 function closeSwipe() { if (currentSwipedItem) { currentSwipedItem.classList.remove('swiped'); currentSwipedItem=null; } }
 
+function instOfTx(tx) { return tx && tx.instId ? state.installments.find(i=>i.id===tx.instId) : null; }
+function delConfirmText(tx) { return instOfTx(tx) ? 'ลบรายการนี้?\n(งวดผ่อนที่ผูกอยู่จะย้อนกลับเป็นยังไม่จ่ายด้วย)' : 'ลบรายการนี้?'; }
+// ลบรายการ + ถอน XP + ย้อนงวดผ่อนที่ผูกอยู่ (ไม่ย้อนต่ำกว่า 0)
+function removeTx(idx) {
+  const inst = instOfTx(state.transactions[idx]);
+  if (inst && inst.paidCount > 0) inst.paidCount--;
+  state.transactions.splice(idx,1);
+  state.xp = Math.max(0,(state.xp||0)-1);
+}
+
 function deleteTx(id) {
-  if (!confirm('ลบรายการนี้?')) return;
   const idx = state.transactions.findIndex(t=>t.id===id);
-  if (idx>=0) { state.transactions.splice(idx,1); state.xp=Math.max(0,(state.xp||0)-1); save(); renderHistory(); updateXP(); }
+  if (idx<0 || !confirm(delConfirmText(state.transactions[idx]))) return;
+  removeTx(idx); save(); renderHistory(); updateXP();
 }
 
 // ===== EDIT TX =====
@@ -751,7 +846,9 @@ function openEditModal(id) {
   document.getElementById('editAmount').value = tx.amount;
   document.getElementById('editDate').value = tx.date;
   document.getElementById('editNote').value = tx.note||'';
-  document.getElementById('editCat').innerHTML = state.categories.map(c=>
+  // หมวดของรายการนี้อาจถูกลบไปแล้ว → ใส่กลับเป็นตัวเลือก ไม่งั้น <select> จะเลือกหมวดแรกแทนแล้วบันทึกทับเงียบๆ
+  const cats = state.categories.some(c=>c.id===tx.catId) ? state.categories : [{id:tx.catId,icon:tx.catIcon,label:tx.catLabel+' (หมวดถูกลบ)'}, ...state.categories];
+  document.getElementById('editCat').innerHTML = cats.map(c=>
     `<option value="${escapeHTML(c.id)}" ${c.id===tx.catId?'selected':''}>${escapeHTML(c.icon)} ${escapeHTML(c.label)}</option>`
   ).join('');
   document.getElementById('editModal').classList.add('show');
@@ -765,30 +862,34 @@ function closeEditModal() { document.getElementById('editModal').classList.remov
 function saveEditTx() {
   const amt = parseFloat(document.getElementById('editAmount').value);
   if (!amt||amt<=0) { showToast('⚠ กรุณาใส่จำนวนเงิน'); return; }
+  const date = document.getElementById('editDate').value;
+  if (!date) { showToast('⚠ กรุณาเลือกวันที่'); return; }
   const catId = document.getElementById('editCat').value;
-  const cat = state.categories.find(c=>c.id===catId); if (!cat) return;
   const idx = state.transactions.findIndex(t=>t.id===editTxId); if (idx<0) return;
-  state.transactions[idx] = {...state.transactions[idx], type:editTab, amount:Math.round(amt*100)/100, catId:cat.id, catIcon:cat.icon, catLabel:cat.label, date:document.getElementById('editDate').value, note:document.getElementById('editNote').value.trim()};
+  const old = state.transactions[idx];
+  const cat = state.categories.find(c=>c.id===catId) || (catId===old.catId ? {id:old.catId,icon:old.catIcon,label:old.catLabel} : null);
+  if (!cat) return;
+  state.transactions[idx] = {...old, type:editTab, amount:Math.round(amt*100)/100, catId:cat.id, catIcon:cat.icon, catLabel:cat.label, date, note:document.getElementById('editNote').value.trim()};
   save(); closeEditModal(); renderHistory(); showToast('✓ แก้ไขแล้ว');
 }
 function deleteFromEdit() {
-  if (!editTxId||!confirm('ลบรายการนี้?')) return;
   const idx = state.transactions.findIndex(t=>t.id===editTxId);
-  if (idx>=0) { state.transactions.splice(idx,1); state.xp=Math.max(0,(state.xp||0)-1); save(); updateXP(); }
+  if (!editTxId || idx<0 || !confirm(delConfirmText(state.transactions[idx]))) return;
+  removeTx(idx); save(); updateXP();
   closeEditModal(); renderHistory();
 }
 
 // ===== SUMMARY =====
 function onSummaryMonthChange() { summaryMonth=document.getElementById('summaryMonthPicker').value; renderSummary(); }
 function renderSummary() {
-  populateMonthPicker('summaryMonthPicker', summaryMonth);
+  summaryMonth = populateMonthPicker('summaryMonthPicker', summaryMonth);
   let txs = state.transactions;
   if (summaryMonth) txs = txs.filter(t=>t.date.startsWith(summaryMonth));
   const exp = txs.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
   const inc = txs.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
   document.getElementById('sumExpense').textContent = '฿'+fmtAmt(exp);
   document.getElementById('sumIncome').textContent = '฿'+fmtAmt(inc);
-  const bal = inc-exp;
+  const bal = r2(inc-exp);
   const balEl = document.getElementById('sumBalance');
   balEl.textContent = (bal>0?'+':bal<0?'-':'')+'฿'+fmtAmt(Math.abs(bal));
   balEl.className = 'sum-value '+(bal>0?'positive':bal<0?'negative':'neutral');
@@ -804,7 +905,8 @@ function renderSummary() {
   if (!sorted.length) { chart.innerHTML='<div style="color:var(--text-dim);font-size:12px;padding:10px 0;">ยังไม่มีข้อมูลรายจ่าย</div>'; return; }
   chart.innerHTML = sorted.map(c=>{
     const budget=state.budgets[c.id]; let barClass='bar-fill', budgetLine='', budgetNote='';
-    if (budget&&budget>0) {
+    // งบเป็นรายเดือน → เทียบเฉพาะตอนเลือกเดือน (ถ้าเป็น "ทุกเดือน" ยอดหลายเดือนจะถูกเทียบกับงบเดือนเดียวจนเกินงบเสมอ)
+    if (summaryMonth&&budget&&budget>0) {
       const pct=c.total/budget*100;
       if (pct>=100) barClass='bar-fill danger'; else if (pct>=70) barClass='bar-fill warn';
       budgetLine=`<div class="bar-budget-line" style="left:${Math.min(budget/max*100,100)}%"></div>`;
@@ -812,7 +914,7 @@ function renderSummary() {
       budgetNote=`<div style="text-align:right;font-size:9px;color:${color};padding-right:2px;">${Math.round(pct)}% ของงบ ฿${fmtAmt(budget)}</div>`;
     }
     return `<div><div class="bar-row"><span class="bar-label">${escapeHTML(c.icon)}</span><div class="bar-track"><div class="${barClass}" style="width:${Math.round(c.total/max*100)}%"></div>${budgetLine}</div><span class="bar-amount">฿${fmtAmt(c.total)}</span></div>${budgetNote}</div>`;
-  }).join('');
+  }).join('') + (!summaryMonth&&Object.keys(state.budgets).length ? '<div style="font-size:10px;color:var(--text-dim);padding-top:8px;">งบเป็นรายเดือน — เลือกเดือนด้านบนเพื่อดูเทียบงบ</div>' : '');
 }
 
 // ===== BASE =====
@@ -820,9 +922,11 @@ function renderBase() {
   const txs=state.transactions;
   const exp=txs.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
   const inc=txs.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
-  const bal=inc-exp, el=document.getElementById('baseBalance');
+  const opening=state.openingBalance||0;
+  const bal=r2(opening+inc-exp), el=document.getElementById('baseBalance');
   el.textContent=(bal>0?'+':bal<0?'-':'')+'฿'+fmtAmt(Math.abs(bal));
   el.className='sum-value '+(bal>0?'positive':bal<0?'negative':'neutral');
+  document.getElementById('baseNote').textContent = opening!==0 ? `รวมยอดตั้งต้น ${opening<0?'-':''}฿${fmtAmt(Math.abs(opening))}` : '';
   const days=[];
   for (let i=6;i>=0;i--) {
     const d=new Date(); d.setDate(d.getDate()-i);
@@ -835,6 +939,40 @@ function renderBase() {
 }
 
 // ===== INSTALLMENT =====
+function instPer(inst) { return Math.round(inst.totalAmount/inst.numInstall*100)/100; }
+
+// ยอดที่จ่ายไปแล้วจริง: รายการที่ผูกกับงวดนี้ (instId) ตามจำนวนเงินที่บันทึกจริง + งวดเก่าที่ไม่มีรายการผูก คิดเป็นงวดละ per
+// → ถ้าลบ/แก้ยอดรายการงวดใดงวดหนึ่ง "ยอดที่เหลือ" และงวดสุดท้ายยังปิดยอดรวมได้พอดี
+function instPaidAmt(inst) {
+  const linked = state.transactions.filter(t => t.instId === inst.id);
+  const linkedSum = linked.reduce((s,t) => s + t.amount, 0);
+  return r2(linkedSum + instPer(inst) * Math.max(0, inst.paidCount - linked.length));
+}
+function instRemainAmt(inst) { return Math.max(0, r2(inst.totalAmount - instPaidAmt(inst))); }
+
+// วันครบกำหนดของงวดที่ idx (0 = งวดแรก) — รายเดือน วันเดียวกัน; เดือนที่ไม่มีวันนั้นใช้วันสุดท้ายของเดือน
+function dueDateFor(startDate, idx) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(startDate||''); if (!m) return null;
+  const y = +m[1], mo = +m[2]-1, d = +m[3]; if (y < 1000) return null;
+  const tot = mo + idx, yy = y + Math.floor(tot/12), mm = tot % 12;
+  const dim = new Date(yy, mm+1, 0).getDate();
+  return `${yy}-${String(mm+1).padStart(2,'0')}-${String(Math.min(d,dim)).padStart(2,'0')}`;
+}
+function dayDiff(a, b) {   // จำนวนวันจาก a ถึง b (รูปแบบ YYYY-MM-DD)
+  const [y1,m1,d1] = a.split('-').map(Number), [y2,m2,d2] = b.split('-').map(Number);
+  return Math.round((Date.UTC(y2,m2-1,d2) - Date.UTC(y1,m1-1,d1)) / 86400000);
+}
+function installDueSummary() {
+  const today = todayStr(); let overdue = 0, soon = 0;
+  state.installments.forEach(inst => {
+    if (inst.paidCount >= inst.numInstall) return;
+    const due = dueDateFor(inst.startDate, inst.paidCount); if (!due) return;
+    const diff = dayDiff(today, due);
+    if (diff < 0) overdue++; else if (diff <= DUE_SOON_DAYS) soon++;
+  });
+  return { overdue, soon };
+}
+
 function renderInstall() {
   const el = document.getElementById('installList');
   const active = state.installments.filter(i=>i.paidCount<i.numInstall);
@@ -849,10 +987,19 @@ function renderInstall() {
   if (active.length) {
     html += `<div class="group-label">กำลังผ่อน (${active.length} รายการ)</div>`;
     active.forEach(inst => {
-      const per = Math.round(inst.totalAmount/inst.numInstall*100)/100;
+      const per = instPer(inst);
       const remaining = inst.numInstall - inst.paidCount;
-      const remainAmt = Math.round((inst.totalAmount - inst.paidCount*per)*100)/100;
+      const remainAmt = instRemainAmt(inst);
       const pct = Math.round(inst.paidCount/inst.numInstall*100);
+      let dueHtml = '';
+      const due = dueDateFor(inst.startDate, inst.paidCount);
+      if (due) {
+        const diff = dayDiff(todayStr(), due), [dy,dm,dd] = due.split('-').map(Number);
+        const dueLabel = new Date(dy,dm-1,dd).toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'numeric'});
+        const cls = diff<0 ? ' over' : diff<=DUE_SOON_DAYS ? ' soon' : '';
+        const tail = diff<0 ? ` • เลยกำหนด ${-diff} วัน` : diff===0 ? ' • วันนี้' : diff<=DUE_SOON_DAYS ? ` • อีก ${diff} วัน` : '';
+        dueHtml = `<div class="install-due${cls}">📅 งวดที่ ${inst.paidCount+1} ครบกำหนด ${dueLabel}${tail}</div>`;
+      }
       const barClass = pct>=100?'install-bar danger':pct>=60?'install-bar warn':'install-bar';
       html += `<div class="install-card">
         <div class="install-header">
@@ -864,7 +1011,8 @@ function renderInstall() {
           </div>
           <button class="btn-del-small" onclick="deleteInstall(${inst.id})">✕</button>
         </div>
-        <div class="install-sub">฿${fmtAmt(per)}/งวด • งวดที่ ${inst.paidCount}/${inst.numInstall} • รวม ฿${fmtAmt(inst.totalAmount)}</div>
+        <div class="install-sub">฿${fmtAmt(per)}/งวด • จ่ายแล้ว ${inst.paidCount}/${inst.numInstall} งวด • รวม ฿${fmtAmt(inst.totalAmount)}</div>
+        ${dueHtml}
         <div class="install-progress"><div class="${barClass}" style="width:${pct}%"></div></div>
         <div class="install-footer">
           <div class="install-remaining">เหลือ ${remaining} งวด • ฿${fmtAmt(remainAmt)}</div>
@@ -898,12 +1046,13 @@ function renderInstall() {
 function payInstall(id) {
   const inst = state.installments.find(i=>i.id===id);
   if (!inst||inst.paidCount>=inst.numInstall) return;
-  const per = Math.round(inst.totalAmount/inst.numInstall*100)/100;
   const isLast = inst.paidCount+1>=inst.numInstall;
-  const amt = isLast ? Math.round((inst.totalAmount-inst.paidCount*per)*100)/100 : per;
+  const amt = isLast ? instRemainAmt(inst) : instPer(inst);   // งวดสุดท้ายปิดยอดที่เหลือจริง
+  // ถามก่อนกันกดพลาด/กดซ้ำ (ย้อนได้โดยลบรายการนี้ในประวัติ)
+  if (!confirm(`บันทึกจ่ายงวดที่ ${inst.paidCount+1}/${inst.numInstall} ฿${fmtAmt(amt)} ?`)) return;
   inst.paidCount++;
   const tx = {
-    id: Date.now(), type:'expense', amount: amt,
+    id: Date.now(), type:'expense', amount: amt, instId: inst.id,
     catId: inst.catId, catIcon: inst.catIcon, catLabel: inst.catLabel,
     note: `ผ่อน: ${inst.name} งวดที่ ${inst.paidCount}/${inst.numInstall}`,
     date: todayStr(), time: new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})
@@ -924,7 +1073,7 @@ function openAddInstallModal() {
   document.getElementById('installStart').value = todayStr();
   ['installName','installTotal','installCount','installNote'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('installPreview').textContent = 'กรอกยอดรวมและจำนวนงวดเพื่อดูตัวอย่าง';
-  document.getElementById('installCat').innerHTML = state.categories.map(c=>
+  document.getElementById('installCat').innerHTML = state.categories.filter(c=>c.type!=='income').map(c=>
     `<option value="${escapeHTML(c.id)}">${escapeHTML(c.icon)} ${escapeHTML(c.label)}</option>`
   ).join('');
   document.getElementById('addInstallModal').classList.add('show');
@@ -948,16 +1097,28 @@ function saveInstall() {
   if (!name) { showToast('⚠ กรุณาใส่ชื่อสินค้า'); return; }
   if (!total||total<=0) { showToast('⚠ กรุณาใส่ยอดรวม'); return; }
   if (!count||count<1) { showToast('⚠ กรุณาใส่จำนวนงวด'); return; }
+  const startDate=document.getElementById('installStart').value;
+  if (!startDate) { showToast('⚠ กรุณาเลือกวันครบกำหนดงวดแรก'); return; }
   const cat=state.categories.find(c=>c.id===catId);
-  state.installments.push({id:Date.now(), name, totalAmount:Math.round(total*100)/100, numInstall:count, paidCount:0, startDate:document.getElementById('installStart').value, catId:cat.id, catIcon:cat.icon, catLabel:cat.label, note});
+  if (!cat) { showToast('⚠ กรุณาเลือกหมวดหมู่'); return; }
+  state.installments.push({id:Date.now(), name, totalAmount:Math.round(total*100)/100, numInstall:count, paidCount:0, startDate, catId:cat.id, catIcon:cat.icon, catLabel:cat.label, note});
   save(); closeAddInstallModal(); renderInstall(); showToast('✓ เพิ่มรายการผ่อนแล้ว');
 }
 
 // ===== CAT MANAGE =====
+const CAT_TYPE_LABEL = {expense:'จ่าย', income:'รับ', both:'ทั้งคู่'};
 function renderCatManage() {
   const el=document.getElementById('catManage');
-  el.innerHTML=state.categories.map(c=>`<div style="background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:6px 10px;font-size:13px;display:flex;align-items:center;gap:6px;cursor:pointer;" data-catid="${escapeHTML(c.id)}">${escapeHTML(c.icon)} ${escapeHTML(c.label)} <span style="color:var(--red);font-size:10px;">✕</span></div>`).join('');
-  el.querySelectorAll('[data-catid]').forEach(div=>{div.onclick=()=>deleteCat(div.dataset.catid);});
+  el.innerHTML=state.categories.map(c=>{const t=c.type||'both'; return `<div class="cat-chip" data-catid="${escapeHTML(c.id)}">${escapeHTML(c.icon)} ${escapeHTML(c.label)} <span class="cat-type ${t}" data-act="type">${CAT_TYPE_LABEL[t]}</span><span class="cat-del" data-act="del">✕</span></div>`;}).join('');
+  el.querySelectorAll('[data-act]').forEach(sp=>{
+    sp.onclick=()=>{const id=sp.closest('[data-catid]').dataset.catid; if (sp.dataset.act==='del') deleteCat(id); else cycleCatType(id);};
+  });
+}
+// แตะป้ายประเภทเพื่อสลับ จ่าย → รับ → ทั้งคู่ (รายการเก่าไม่ถูกแก้ แค่เปลี่ยนว่าหมวดนี้ไปโผล่ในแท็บไหน)
+function cycleCatType(id) {
+  const c=state.categories.find(c=>c.id===id); if (!c) return;
+  c.type=CAT_TYPES[(CAT_TYPES.indexOf(c.type||'both')+1)%CAT_TYPES.length];
+  save(); renderCatManage(); renderBudgetManage(); renderCategories();
 }
 function deleteCat(id) {
   if (state.categories.length<=1){showToast('⚠ ต้องมีอย่างน้อย 1 หมวด');return;}
@@ -966,9 +1127,17 @@ function deleteCat(id) {
   delete state.budgets[id]; save(); renderCatManage(); renderBudgetManage(); renderCategories();
 }
 
+// ===== OPENING BALANCE =====
+function renderOpening() { document.getElementById('openingInput').value = state.openingBalance || ''; }
+function saveOpening(input) {
+  const v = parseFloat(input.value);
+  state.openingBalance = isFinite(v) ? r2(v) : 0;
+  save();
+}
+
 // ===== BUDGET MANAGE =====
 function renderBudgetManage() {
-  document.getElementById('budgetManage').innerHTML=state.categories.map(c=>`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><span style="font-size:16px;width:24px;text-align:center;">${escapeHTML(c.icon)}</span><span style="flex:1;font-size:12px;color:var(--text-main);">${escapeHTML(c.label)}</span><input type="number" data-catid="${escapeHTML(c.id)}" value="${state.budgets[c.id]||''}" placeholder="ไม่จำกัด" min="0" step="1" style="width:100px;background:var(--bg-card2);border:2px solid var(--border);border-radius:4px;padding:5px 8px;color:var(--text-main);font-size:12px;text-align:right;outline:none;font-family:inherit;" oninput="saveBudget(this)"></div>`).join('');
+  document.getElementById('budgetManage').innerHTML=state.categories.filter(c=>c.type!=='income').map(c=>`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><span style="font-size:16px;width:24px;text-align:center;">${escapeHTML(c.icon)}</span><span style="flex:1;font-size:12px;color:var(--text-main);">${escapeHTML(c.label)}</span><input type="number" data-catid="${escapeHTML(c.id)}" value="${state.budgets[c.id]||''}" placeholder="ไม่จำกัด" min="0" step="1" style="width:100px;background:var(--bg-card2);border:2px solid var(--border);border-radius:4px;padding:5px 8px;color:var(--text-main);font-size:12px;text-align:right;outline:none;font-family:inherit;" oninput="saveBudget(this)"></div>`).join('');
 }
 function saveBudget(input) {
   const val=parseFloat(input.value);
@@ -984,13 +1153,14 @@ function saveGoal() {
   state.goal=Math.max(1,parseInt(document.getElementById('goalInput').value)||10);
   save(); updateXP(); closeGoalModal(); showToast('✓ บันทึกเป้าหมาย');
 }
-function openAddCatModal() { document.getElementById('addCatModal').classList.add('show'); }
+function openAddCatModal() { document.getElementById('newCatType').value=currentTab; document.getElementById('addCatModal').classList.add('show'); }
 function closeAddCatModal() { document.getElementById('addCatModal').classList.remove('show'); }
 function saveNewCat() {
   const emoji=document.getElementById('newCatEmoji').value.trim()||'📦';
   const name=document.getElementById('newCatName').value.trim();
   if (!name){showToast('⚠ กรุณาใส่ชื่อหมวด');return;}
-  state.categories.push({id:'cat_'+Date.now(),icon:emoji,label:name});
+  const type=document.getElementById('newCatType').value;
+  state.categories.push({id:'cat_'+Date.now(),icon:emoji,label:name,type:CAT_TYPES.includes(type)?type:'both'});
   save(); renderCategories(); closeAddCatModal();
   document.getElementById('newCatEmoji').value=''; document.getElementById('newCatName').value='';
   showToast('✓ เพิ่มหมวดหมู่แล้ว');
@@ -998,7 +1168,48 @@ function saveNewCat() {
 function clearAllData() {
   if (!confirm('⚠️ ลบข้อมูลทั้งหมดจริงๆ?')) return;
   state.transactions=[]; state.installments=[]; state.xp=0; selectedCat=null;
-  save(); updateXP(); renderCategories(); showToast('🗑️ ลบข้อมูลแล้ว');
+  save(); updateXP(); renderCategories(); renderNotices(); renderBackupInfo(); showToast('🗑️ ลบข้อมูลแล้ว');
+}
+
+// ===== BACKUP REMINDER / NOTICES =====
+const BACKUP_EVERY_DAYS = 7, BACKUP_FIRST_AFTER = 5, DUE_SOON_DAYS = 3;
+
+// รายการ "ใหม่" = สร้างหลังสำรองล่าสุด (id ของรายการคือเวลาที่สร้าง) — การแก้ไข/ลบไม่นับ
+function backupStatus() {
+  const last = state.lastBackup || 0;
+  const unsaved = state.transactions.filter(t => t.id > last).length;
+  const days = last ? Math.floor((Date.now() - last) / 86400000) : null;
+  const due = unsaved > 0 && (last ? days >= BACKUP_EVERY_DAYS : unsaved >= BACKUP_FIRST_AFTER);
+  const snoozed = (state.backupSnoozeUntil || 0) > Date.now();
+  return { last, unsaved, days, due, snoozed };
+}
+
+function snoozeBackup() { state.backupSnoozeUntil = Date.now() + 86400000; save(); renderNotices(); }
+
+function renderBackupInfo() {
+  const b = backupStatus();
+  const when = b.last
+    ? new Date(b.last).toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'numeric'}) + (b.days <= 0 ? ' (วันนี้)' : ` (${b.days} วันที่แล้ว)`)
+    : 'ยังไม่เคยสำรอง';
+  document.getElementById('backupInfo').textContent = `💾 สำรอง JSON ล่าสุด: ${when} • รายการใหม่ที่ยังไม่ได้สำรอง: ${b.unsaved}`;
+}
+
+function renderNotices() {
+  const box = document.getElementById('noticeBox');
+  const items = [];
+  const d = installDueSummary();
+  if (d.overdue + d.soon > 0) {
+    const parts = [];
+    if (d.overdue) parts.push(`เลยกำหนด ${d.overdue} รายการ`);
+    if (d.soon) parts.push(`ใกล้ครบกำหนด ${d.soon} รายการ`);
+    items.push(`<div class="notice warn" onclick="showPage('install')">💳 ผ่อนชำระ: ${parts.join(' • ')} ›</div>`);
+  }
+  const b = backupStatus();
+  if (b.due && !b.snoozed) {
+    items.push(`<div class="notice"><div>💾 ${b.last ? `สำรองข้อมูลล่าสุด ${b.days} วันที่แล้ว` : 'ยังไม่เคยสำรองข้อมูล'} • มี ${b.unsaved} รายการใหม่ที่ยังไม่ได้สำรอง</div><div class="notice-btns"><button class="primary" onclick="exportJSON()">สำรองเลย</button><button onclick="snoozeBackup()">ไว้ก่อน</button></div></div>`);
+  }
+  box.innerHTML = items.join('');
+  box.style.display = items.length ? 'block' : 'none';
 }
 
 // ===== EXPORT / IMPORT =====
@@ -1008,14 +1219,16 @@ function exportCSV() {
   const rows=state.transactions.slice().sort((a,b)=>a.date.localeCompare(b.date)||a.id-b.id).map(t=>[t.date,t.time||'',t.type==='expense'?'รายจ่าย':'รายรับ',q(t.catLabel),t.amount,q(t.note)]);
   const exp=state.transactions.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
   const inc=state.transactions.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
-  rows.push([],['',' ','รายจ่ายรวม','',exp,''],['',' ','รายรับรวม','',inc,''],['',' ','คงเหลือ','',(inc-exp),'']);
+  rows.push([],['',' ','รายจ่ายรวม','',r2(exp),''],['',' ','รายรับรวม','',r2(inc),''],['',' ','คงเหลือ','',r2(inc-exp),'']);
   const csv='﻿'+[['วันที่','เวลา','ประเภท','หมวดหมู่','จำนวนเงิน (บาท)','โน้ต'],...rows].map(r=>r.join(',')).join('\n');
   const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
   a.download=`pixel-wallet-${new Date().toISOString().split('T')[0]}.csv`; a.click(); showToast('✓ Export CSV แล้ว');
 }
 function exportJSON() {
+  state.lastBackup=Date.now(); delete state.backupSnoozeUntil; save();
   const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(state,null,2)],{type:'application/json'}));
   a.download=`pixel-wallet-backup-${new Date().toISOString().split('T')[0]}.json`; a.click(); showToast('✓ Export JSON แล้ว');
+  renderNotices(); renderBackupInfo();
 }
 function importJSON(event) {
   const file=event.target.files[0]; if (!file) return;
@@ -1026,12 +1239,8 @@ function importJSON(event) {
       if (!imported.transactions||!Array.isArray(imported.transactions)){showToast('❌ ไฟล์ไม่ถูกต้อง');return;}
       if (!confirm(`นำเข้า ${imported.transactions.length} รายการ?\n(จะแทนที่ข้อมูลปัจจุบัน)`)) return;
       state=imported;
-      if (!state.categories) state.categories=[];
-      if (!state.xp) state.xp=0;
-      if (!state.goal) state.goal=10;
-      if (!state.budgets) state.budgets={};
-      if (!state.installments) state.installments=[];
-      save(); updateXP(); renderCategories(); showToast('✓ Import สำเร็จ '+imported.transactions.length+' รายการ');
+      migrateState(); selectedCat=null;
+      save(); updateXP(); renderCategories(); renderNotices(); renderBackupInfo(); showToast('✓ Import สำเร็จ '+imported.transactions.length+' รายการ');
     } catch(err){showToast('❌ ไฟล์เสียหาย');}
   };
   reader.readAsText(file); event.target.value='';
@@ -1044,6 +1253,7 @@ document.getElementById('editModal').onclick=function(e){if(e.target===this)clos
 document.getElementById('addInstallModal').onclick=function(e){if(e.target===this)closeAddInstallModal();};
 document.getElementById('levelupOverlay').onclick=closeLevelUp;
 document.addEventListener('click',e=>{if(!e.target.closest('.tx-item-wrap'))closeSwipe();});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){refreshDefaultDate();renderNotices();}});
 
 init();
 </script>
