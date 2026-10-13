@@ -30,6 +30,7 @@
   .header-logo { display: flex; align-items: center; gap: 8px; }
   .coin-icon { width: 28px; height: 28px; background: radial-gradient(circle at 35% 35%, #ffe066, #f5c518 50%, #c9a000); border-radius: 50%; border: 2px solid #8a6800; box-shadow: inset -2px -2px 0 #8a6800, 2px 2px 0 rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; color: #8a6800; }
   .logo-text { font-family: 'Press Start 2P', monospace; font-size: 11px; color: var(--gold); text-shadow: 2px 2px 0 #8a6800; letter-spacing: 1px; }
+  .app-version { font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--text-dim); border: 1px solid var(--border); border-radius: 2px; padding: 2px 4px; white-space: nowrap; }
   .header-right { display: flex; align-items: center; gap: 8px; }
   .btn-settings { background: var(--bg-card); border: 2px solid var(--border); color: var(--text-dim); width: 32px; height: 32px; border-radius: var(--btn-radius); cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; }
   .btn-settings:active { transform: translate(1px,1px); }
@@ -234,7 +235,7 @@
   <div class="header">
     <div class="header-logo">
       <div class="coin-icon">$</div>
-      <span class="logo-text">PIXEL WALLET</span>
+      <span class="logo-text">PIXEL WALLET</span><span class="app-version" title="เวอร์ชันของแอป — ต้องตรงกับเลขใน sw.js (CACHE)">v5</span>
     </div>
     <div class="header-right">
       <button class="btn-settings" onclick="showPage('settings')">⚙</button>
